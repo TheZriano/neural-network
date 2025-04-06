@@ -68,10 +68,9 @@ def createNetworkFromJson(path):
         neuralNetwork.append(array)
     return neuralNetwork
 
-def softMax(values):
-    exp_values = [math.exp(v) for v in values]
-    total = sum(exp_values)
-    return [v / total for v in exp_values]
+def toPercent(values):
+    values=np.array(values)
+    return values / values.sum() * 100
 
 
 def function(x):
@@ -85,9 +84,6 @@ def train(input_values, target_values, learning_rate=0.1):
 
     for i, value in enumerate(input_values):
         neuralNetwork[0][i].value = value
-
-
-    outputs = [neuron.calc() for neuron in neuralNetwork[-1]]
 
     for i, neuron in enumerate(neuralNetwork[-1]):
         output = neuron.calc()
@@ -118,27 +114,51 @@ def one_hot(label):
     arr[label] = 1
     return arr
 
-for i in tqdm(range(26000,36000)):  # esempio: primi 1000
+#training
+
+"""for i in tqdm(range(50000,60000)):
     input_data = [x / 255 for x in train_images[i].flatten()]      # normalizza
     target = one_hot(train_labels[i])                    # etichetta
     train(input_data, target)
     if i%10==0:
         saveNetworkToJson("data.json")
+"""
+
+def testResults():
+    correct=0
+    wrong=[]
+    localtestImages=test_images
+    localtestLabel=test_labels
+    for i in tqdm(range(100)):
+        
+        test_input = [x / 255 for x in localtestImages[i].flatten()]
+        predicted_output=localtestLabel[i]
+
+        for j, v in enumerate(test_input):
+            neuralNetwork[0][j].value = v
+
+        output = [neuron.calc() for neuron in neuralNetwork[-1]]
+        if output.index(max(output))==predicted_output:
+            correct+=1
+        else:
+            wrong.append(i)
+    print(f"corretti) {correct}\n wrong) {wrong}")
 
 
 
 
-test_input = [x / 255 for x in test_images[1].flatten()]
+
+test_input = [x / 255 for x in test_images[int(input("immagine? "))].flatten()]
 
 
 for i, v in enumerate(test_input):
     neuralNetwork[0][i].value = v
 
 output = [neuron.calc() for neuron in neuralNetwork[-1]]
-output = softMax(output)
+output = toPercent(output)
 
 for i, result in enumerate(output):
-    print(f"Cifra {i}: {result*100:.2f}%")
+    print(f"{i}) {result:.2f}%")
 
 
 # Converte la lista 1D in una matrice 2D (28x28 per MNIST)
@@ -148,3 +168,5 @@ input_data_2d = np.array(test_input).reshape(28, 28)
 plt.imshow(input_data_2d, cmap='gray')  # 'gray' per immagini in bianco e nero
 plt.axis('off')  # Disattiva gli assi
 plt.show()
+
+#testResults()
