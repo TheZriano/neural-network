@@ -5,6 +5,7 @@ import tensorflow as tf
 from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
+import imageToList as itl
 
 # Carica il dataset MNIST
 (train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data()
@@ -146,9 +147,27 @@ def testResults():
 
 
 
+def getOutput(input):
+    input = [x / 255 for x in np.array(input).flatten()]
+    for i, v in enumerate(input):
+        neuralNetwork[0][i].value = v
+
+    output = [neuron.calc() for neuron in neuralNetwork[-1]]
+    output = toPercent(output)
+
+    for i, result in enumerate(output):
+        print(f"{i}) {result:.2f}%")
 
 
-test_input = [x / 255 for x in test_images[int(input("immagine? "))].flatten()]
+    # Converte la lista 1D in una matrice 2D (28x28 per MNIST)
+    input_data_2d = np.array(input).reshape(28, 28)
+
+    # Visualizza l'immagine
+    plt.imshow(input_data_2d, cmap='gray')  # 'gray' per immagini in bianco e nero
+    plt.axis('off')  # Disattiva gli assi
+    plt.show()
+
+"""test_input = [x / 255 for x in test_images[int(input("immagine? "))].flatten()]
 
 
 for i, v in enumerate(test_input):
@@ -167,6 +186,7 @@ input_data_2d = np.array(test_input).reshape(28, 28)
 # Visualizza l'immagine
 plt.imshow(input_data_2d, cmap='gray')  # 'gray' per immagini in bianco e nero
 plt.axis('off')  # Disattiva gli assi
-plt.show()
+plt.show()"""
 
 #testResults()
+getOutput(itl.itl("img.png"))
