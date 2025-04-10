@@ -22,13 +22,13 @@ class Neuron:
         self.value=value
         self.delta=0
 
-    def calc(self):
+    def calc(self,previous_neurons):
         if self.column==0:
             return self.value
         else:
-            previous_neurons = neuralNetwork[self.column - 1]
-            weighted_sum = sum(neuron.calc() * weight for neuron, weight in zip(previous_neurons, self.weights))
-            return function(weighted_sum+self.bias)
+            weighted_sum = sum(neuron.value * weight for neuron, weight in zip(previous_neurons, self.weights))
+            self.value= function(weighted_sum+self.bias)
+            return self.value
         
     def get_data(self):
         return {
@@ -81,19 +81,29 @@ def function(x):
 def derivative(x):
     return x * (1 - x)
 
+def calcNetworkOutput(inputValues):
+    for i, value in enumerate(inputValues):
+        neuralNetwork[0][i].value = value
+    for layerIndex, layer in enumerate(neuralNetwork):
+        if layerIndex!=0:
+            for neuron in layer:
+                neuron.calc(n for n in neuralNetwork[layerIndex-1])
+    return (n.value for n in neuralNetwork[-1])
+
+
+
 def train(input_values, target_values, learning_rate=0.1):
 
-    for i, value in enumerate(input_values):
-        neuralNetwork[0][i].value = value
+    calcNetworkOutput(input_values)
 
     for i, neuron in enumerate(neuralNetwork[-1]):
-        output = neuron.calc()
+        output = neuron.value
         error = target_values[i] - output
         neuron.delta = error * derivative(output)
 
     for layer_index in reversed(range(1, len(neuralNetwork) - 1)):
         for i, neuron in enumerate(neuralNetwork[layer_index]):
-            output = neuron.calc()
+            output = neuron.value
             # somma dei pesi * delta dei neuroni successivi
             downstream = neuralNetwork[layer_index + 1]
             error = sum(n.weights[i] * n.delta for n in downstream)
@@ -102,7 +112,7 @@ def train(input_values, target_values, learning_rate=0.1):
     for layer_index in range(1, len(neuralNetwork)):
         for neuron in neuralNetwork[layer_index]:
             for j, prev_neuron in enumerate(neuralNetwork[layer_index - 1]):
-                neuron.weights[j] += learning_rate * neuron.delta * prev_neuron.calc()
+                neuron.weights[j] += learning_rate * neuron.delta * prev_neuron.value
             neuron.bias += learning_rate * neuron.delta
 
 
@@ -117,28 +127,25 @@ def one_hot(label):
 
 #training
 
-"""for i in tqdm(range(50000,60000)):
+"""for i in tqdm(range(60000)):
     input_data = [x / 255 for x in train_images[i].flatten()]      # normalizza
     target = one_hot(train_labels[i])                    # etichetta
     train(input_data, target)
-    if i%10==0:
-        saveNetworkToJson("data.json")
-"""
+    if i%1000==0:
+        saveNetworkToJson("data.json")"""
+
 
 def testResults():
     correct=0
     wrong=[]
     localtestImages=test_images
     localtestLabel=test_labels
-    for i in tqdm(range(100)):
+    for i in tqdm(range(10000)):
         
         test_input = [x / 255 for x in localtestImages[i].flatten()]
         predicted_output=localtestLabel[i]
 
-        for j, v in enumerate(test_input):
-            neuralNetwork[0][j].value = v
-
-        output = [neuron.calc() for neuron in neuralNetwork[-1]]
+        output = list(calcNetworkOutput(test_input))
         if output.index(max(output))==predicted_output:
             correct+=1
         else:
@@ -149,10 +156,9 @@ def testResults():
 
 def getOutput(input):
     input = [x / 255 for x in np.array(input).flatten()]
-    for i, v in enumerate(input):
-        neuralNetwork[0][i].value = v
 
-    output = [neuron.calc() for neuron in neuralNetwork[-1]]
+    output = list(calcNetworkOutput(input))
+    
     output = toPercent(output)
 
     for i, result in enumerate(output):
@@ -188,5 +194,8 @@ plt.imshow(input_data_2d, cmap='gray')  # 'gray' per immagini in bianco e nero
 plt.axis('off')  # Disattiva gli assi
 plt.show()"""
 
+
 #testResults()
 getOutput(itl.itl("img.png"))
+#getOutput([x / 255 for x in test_images[int(input("immagine? "))]])
+
